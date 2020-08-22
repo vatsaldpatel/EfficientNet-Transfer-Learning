@@ -1,6 +1,6 @@
 # EfficientNet-Transfer-Learning
 
-In this tutorial we will be doing transfer learning on the EfficientNet B0 CNN model with the imagenet weights. We are going to train the model to distinguish between cat and dog.
+In this tutorial we will be doing transfer learning on the EfficientNet B0 CNN model with the imagenet weights. We are going to re-train the model to distinguish between cat and dog.
 
 ### What is Transfer Learning?
 In simple terms transfer learning is the method where we can reuse a pre-trained model as a starting point of our own object classification model.
@@ -46,7 +46,7 @@ model_save_location = "Model/EfficientNet"
 ~~~~
 * **NUM_CLASSES** is the different object the model will be distinguishing. In our case 2 i.e. cat and dog.
 * The next are the paths to the training, validation and testing dataset directory.
-* **epochs** are the number of times the training batches will be fed to the model.
+* **epochs** are the number of times the training batches will be fed to the model. The number of epochs will change according to the dataset.
 * **model_save_location** is the location where you want to save the trained model.
 
 ### 3. Build Model
@@ -98,9 +98,47 @@ def unfreeze_model(model):
         optimizer=optimizer, loss="categorical_crossentropy", metrics=["accuracy"]
     )
 ~~~~
+**build_model and unfreeze_model**
 1. We will load the EfficientNet B0 version with the imagenet weights.
 2. We will freeze the pre-trained weights of the model so that they do not change while training our model.
-3. We will 
+3. We will add some custom layers on the top of the model and add our output layer with *NUM_CLASSES* and activation function as *softmax*.
+4. We will unfreeze the top 20 layers except the BatchNormalization layers, so that the model can learn from our dataset.
+
 ### 4. Train Model
+~~~~python
+model = build_model(NUM_CLASSES)
+unfreeze_model(model)
+
+train_batches = ImageDataGenerator(preprocessing_function=tf.keras.applications.efficientnet.preprocess_input).flow_from_directory(
+    directory=train_path, target_size=(224,224), batch_size=10)
+valid_batches = ImageDataGenerator(preprocessing_function=tf.keras.applications.efficientnet.preprocess_input).flow_from_directory(
+    directory=valid_path, target_size=(224,224), batch_size=10)
+test_batches = ImageDataGenerator(preprocessing_function=tf.keras.applications.efficientnet.preprocess_input).flow_from_directory(
+    directory=test_path, target_size=(224,224), batch_size=10, shuffle=False)
+
+_ = model.fit(train_batches, epochs=epochs, validation_data=valid_batches, verbose=1)
+~~~~
+* We will get our model by calling **build_model**, after that we will call **unfreeze_model**.
+* We will preprocess our images and make their batches by using the *ImageDataGenerator* function on the training, testing and validation images.
+* We will provide the **train_batches** and **valid_batches** to *model.fit()* function.
 
 ### 5. Test Model
+~~~~python
+#Testing the Model
+test_labels = test_batches.classes
+print("Test Labels",test_labels)
+print(test_batches.class_indices)
+
+predictions = model.predict(test_batches,steps=len(test_batches),verbose=0)
+
+acc = 0
+for i in range(len(test_labels)):
+    actual_class = test_labels[i]
+    if predictions[i][actual_class] > 0.5 : 
+        acc += 1
+print("Accuarcy:",(acc/len(test_labels))*100,"%")
+~~~~
+* We will provide the **test_batches** to the *model.predict()* function which will return the probabilities of each images.
+* Finally we will print the accuracy as predicted by the model and save the model to the **model_save_location**.
+
+##### THANK YOU !!
