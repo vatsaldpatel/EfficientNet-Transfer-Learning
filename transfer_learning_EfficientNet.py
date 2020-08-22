@@ -8,7 +8,6 @@ from tensorflow.keras.layers.experimental import preprocessing
 from tensorflow.keras import layers
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
-import time
 
 # Import the Desired Version of EfficientNet
 from tensorflow.keras.applications import EfficientNetB0
